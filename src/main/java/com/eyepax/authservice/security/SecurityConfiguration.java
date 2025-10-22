@@ -1,5 +1,7 @@
 package com.eyepax.authservice.security;
 
+import com.eyepax.authservice.repository.UserRepository;
+import com.eyepax.authservice.service.AuditLogService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -18,16 +20,30 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfiguration {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        CognitoLogoutHandler cognitoLogoutHandler = new CognitoLogoutHandler();
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           AuditLogService auditLogService,
+                                           UserRepository userRepository) throws Exception {
+        CognitoLogoutHandler cognitoLogoutHandler = new CognitoLogoutHandler(auditLogService, userRepository);
 
-        http.csrf(Customizer.withDefaults())
+        http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/").permitAll()
-                        .anyRequest()
-                        .authenticated())
+                        .anyRequest().authenticated())
                 .oauth2Login(Customizer.withDefaults())
-                .logout(logout -> logout.logoutSuccessHandler(cognitoLogoutHandler));
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .addLogoutHandler((request, response, auth) -> {
+                            if (auth != null && auth.getName() != null) {
+                                System.out.println(">>> Logout handler called for: " + auth.getName());
+                            }
+                        })
+                        .logoutSuccessHandler(cognitoLogoutHandler)
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .permitAll()
+                );
+
         return http.build();
     }
+
 }
