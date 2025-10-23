@@ -29,7 +29,14 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/").permitAll()
                         .anyRequest().authenticated())
+
+                // Enable OAuth2 login (browser-based)
                 .oauth2Login(Customizer.withDefaults())
+
+                // Enable JWT Resource Server (API-based)
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+
+                // Logout handling (Cognito + custom audit)
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .addLogoutHandler((request, response, auth) -> {

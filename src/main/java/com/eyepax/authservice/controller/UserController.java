@@ -1,31 +1,31 @@
 package com.eyepax.authservice.controller;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.eyepax.authservice.dto.UpdateUserDto;
+import com.eyepax.authservice.dto.UserDto;
+import com.eyepax.authservice.service.UserService;
+import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api/v1")
 public class UserController {
 
-    // Endpoint for any authenticated user
-    @GetMapping("/api/v1/me")
-    public String getProfile(@AuthenticationPrincipal Jwt jwt) {
-        // Return some info from the JWT claims
-        String email = jwt.getClaimAsString("email"); // Cognito usually includes email
-        String username = jwt.getClaimAsString("cognito:username"); // optional username
-        return "Hello, " + email + " (username: " + username + ")";
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
-    // Endpoint for admin users only
-    @GetMapping("/api/v1/admin/test")
-    public String adminTest() {
-        return "Hello Admin! You have access to this endpoint.";
+    @GetMapping("/me")
+    public UserDto getMe(Authentication authentication) {
+        return userService.getCurrentUser(authentication);
     }
 
-    // Optional: simple health check
-    @GetMapping("/healthz")
-    public String healthCheck() {
-        return "Health is OK";
+    @PatchMapping("/me")
+    public UserDto updateMe(Authentication authentication,
+                            @RequestBody @Valid UpdateUserDto updateUserDto) {
+        return userService.updateCurrentUser(authentication, updateUserDto);
     }
+
 }

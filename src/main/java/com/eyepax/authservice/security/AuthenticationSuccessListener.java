@@ -27,7 +27,7 @@ public class AuthenticationSuccessListener implements ApplicationListener<Authen
         if (principal instanceof OidcUser oidcUser) {
             String sub = oidcUser.getClaimAsString("sub");
             String email = oidcUser.getClaimAsString("email");
-            String name = oidcUser.getClaimAsString("name"); // or preferred_username/displayName depending on pool
+            String name = oidcUser.getClaimAsString("preferred_username"); // or preferred_username/displayName depending on pool
 
             // create or update local user
             var user = userSyncService.findOrCreateFromCognito(sub, email, email, name);
