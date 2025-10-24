@@ -39,8 +39,7 @@ public class UserService {
 
     public UserDto getCurrentUser(Authentication authentication) {
         String cognitoSub = authentication.getName();
-        User user = userRepository.findByCognitoSub(cognitoSub)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getUserByCognitoSub(cognitoSub);
 
         UserDto dto = new UserDto();
         dto.setId(user.getId());
@@ -116,6 +115,11 @@ public class UserService {
         return getUserDetails(userId);
     }
 
+    // inside UserService.java
+    public User getUserByCognitoSub(String cognitoSub) {
+        return userRepository.findByCognitoSub(cognitoSub)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
 }
 

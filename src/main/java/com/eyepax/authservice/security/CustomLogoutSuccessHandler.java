@@ -18,25 +18,35 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
 
+    // ✅ Frontend URL to redirect after logout
+    private static final String FRONTEND_LOGIN_URL = "http://localhost:3000/";
+
     public CustomLogoutSuccessHandler(UserRepository userRepository, AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.auditLogService = auditLogService;
     }
 
     @Override
-    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        Long userId = null;
+    public void onLogoutSuccess(HttpServletRequest request,
+                                HttpServletResponse response,
+                                Authentication authentication)
+            throws IOException, ServletException {
+
         if (authentication != null && authentication.getName() != null) {
-            // try to resolve user by email or principal
             String principalName = authentication.getName();
+
+            // Try resolving by email or Cognito sub
             Optional.of(principalName)
                     .flatMap(userRepository::findByEmail)
+                    .or(() -> userRepository.findByCognitoSub(principalName))
                     .ifPresent(u -> {
-                        auditLogService.record(u.getId(), "LOGOUT", "User logged out", request);
+                        auditLogService.record(u.getId(), "LOGOUT", "User logged out successfully", request);
+                        System.out.println(">>> Logout audit recorded for: " + u.getEmail());
                     });
         }
-        // redirect to home or login
-        response.sendRedirect("/");
+
+        // ✅ Redirect to React login page
+        response.sendRedirect(FRONTEND_LOGIN_URL);
     }
 }
 
